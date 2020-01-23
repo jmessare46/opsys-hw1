@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 /**
  * Gets the sum of the word based on it's ascii values
@@ -38,72 +38,69 @@ int main(int argc, char **argv) {
     }
     else
     {
+        setvbuf(stdout, NULL, _IONBF, 0); // Disables buffered output for grading on Submitty
+
         FILE *fp;
+        char c;
         char *filename = *(argv+2);
         char *str = calloc(128, sizeof(char));
         int cache_size = atoi(*(argv+1));
+//        printf("Cache Size: %d\n\n", cache_size);
+
+        // Allocates the cache memory
         char **cache = (char**) calloc(cache_size, sizeof(char*));
+        char *allocated = (char*) calloc(cache_size, sizeof(char));
+
+        int index = 0;
 
         fp = fopen(filename, "r");
         if(fp == NULL)
         {
-            fprintf(stderr, "Could not open file %s", filename);
+            fprintf(stderr, "Error: Could not open file %s", filename);
             return 1;
         }
         else
         {
-            int index = 0;
-            while (fgets(str, 128, fp) != NULL)
+            while(!feof(fp))
             {
-                const char s[2] = " ";
-                char *token;
-                char *cache_value = NULL;
-
-                /* get the first token */
-                token = strtok(str, s);
-                cache_value = *(cache + (int)(get_ascii_sum(token) / cache_size));
-                if(*cache_value == '0')
+                c = fgetc(fp);
+                if(isalnum(c))
                 {
-                    *(cache + (int)(get_ascii_sum(token) / cache_size)) = calloc(strlen(token), sizeof(char));
-                    strcpy(*(cache + (int)(get_ascii_sum(token) / cache_size)), token);
+                    *(str + index) = c;
+                    index++;
                 }
                 else
                 {
-                    realloc(*(cache + (int)(get_ascii_sum(token) / cache_size)), strlen(token) * sizeof(char));
-                    strcpy(*(cache + (int)(get_ascii_sum(token) / cache_size)), token);
-                }
-
-                /* walk through other tokens */
-                while( token != NULL ) {
-                    printf( " %s\n", token );
-
-                    token = strtok(NULL, s);
-                    if(*cache_value == '0')
+                    if(get_ascii_sum(str) > 0) // Makes sure this is not a blank word
                     {
-                        *(cache + (int)(get_ascii_sum(token) / cache_size)) = calloc(strlen(token), sizeof(char));
-                        strcpy(*(cache + (int)(get_ascii_sum(token) / cache_size)), token);
-                    }
-                    else
-                    {
-                        realloc(*(cache + (int)(get_ascii_sum(token) / cache_size)), strlen(token) * sizeof(char));
-                        strcpy(*(cache + (int)(get_ascii_sum(token) / cache_size)), token);
+                        int cache_index = (int) (get_ascii_sum(str) % cache_size);
+//                        printf("String: %s \nAscii Val: %i \nCache Index: %d\n\n", str, get_ascii_sum(str), cache_index);
+
+                        if(*(allocated+cache_index) == '1')
+                        {
+                            realloc(*(cache + cache_index), (sizeof(strlen(str)) + 1) * sizeof(char));
+                            printf("Word \"%s\" ==> %x (realloc)\n", str, cache_index);
+                        }
+                        else
+                        {
+                            *(cache + cache_index) = calloc(strlen(str) + 1, sizeof(char));
+                            printf("Word \"%s\" ==> %x (calloc)\n", str, cache_index);
+                        }
+
+                        strcpy(*(cache + cache_index), str); // Saves the string in the cache
+                        *(allocated+cache_index) = '1'; // Saves that the memory section was allocated
+                        free(str); // Frees the temporary string variable
+                        str = calloc(128, sizeof(char)); // Resets the string value
+                        index = 0;
                     }
                 }
-
-                for(int x = 0; x < cache_size; x++)
-                {
-                    printf("%s\n", *(cache+x));
-                    free(*(cache+x));
-                }
-
-                index++;
             }
-
-            fclose(fp);
         }
 
+        fclose(fp);
         free(str);
         free(cache);
+        free(allocated);
         return 0;
     }
 }
