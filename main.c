@@ -34,7 +34,7 @@ void print_cache(char **cache, int cache_size)
     {
         if(*(cache+x) != NULL)
         {
-            fprintf(stdout, "Cache Index %d ==> \"%s\"\n", x, *(cache+x));
+            fprintf(stdout, "Cache index %d ==> \"%s\"\n", x, *(cache+x));
         }
     }
 }
@@ -130,6 +130,13 @@ int main(int argc, char **argv) {
             print_cache(cache, cache_size); // Prints out the contents of the cache
         }
 
+        for(int x = 0; x < cache_size; x++)
+        {
+            if(*(allocated+x) == '1')
+            {
+                free(*(cache+x));
+            }
+        }
         fclose(fp);
         free(str);
         free(cache);
