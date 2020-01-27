@@ -23,6 +23,23 @@ int get_ascii_sum(char * word)
 }
 
 /**
+ * Prints out the contents of the current cache.
+ *
+ * @param cache The array of cache values
+ * @param cache_size The size of the cache to print
+ */
+void print_cache(char **cache, int cache_size)
+{
+    for(int x = 0; x < cache_size; x++)
+    {
+        if(*(cache+x) != NULL)
+        {
+            fprintf(stdout, "Cache Index %d ==> \"%s\"\n", x, *(cache+x));
+        }
+    }
+}
+
+/**
  * Runs the main function.
  *
  * @param argc The number of arguments passed
@@ -38,6 +55,16 @@ int main(int argc, char **argv) {
     }
     else
     {
+        // Checks to make sure a valid cache size is given
+        for(int x = 0; x < strlen(*(argv+1)); x++)
+        {
+            if(!isdigit(*(*(argv+1)+x)))
+            {
+                fprintf(stderr, "Error: '%s' is not a valid cache size", *(argv+1));
+                return 1;
+            }
+        }
+
         setvbuf(stdout, NULL, _IONBF, 0); // Disables buffered output for grading on Submitty
 
         FILE *fp;
@@ -63,7 +90,7 @@ int main(int argc, char **argv) {
         {
             while(!feof(fp))
             {
-                c = fgetc(fp);
+                c = (char) fgetc(fp);
                 if(isalnum(c))
                 {
                     *(str + index) = c;
@@ -76,25 +103,31 @@ int main(int argc, char **argv) {
                         int cache_index = (int) (get_ascii_sum(str) % cache_size);
 //                        printf("String: %s \nAscii Val: %i \nCache Index: %d\n\n", str, get_ascii_sum(str), cache_index);
 
-                        if(*(allocated+cache_index) == '1')
+                        if(strlen(str) > 2) // Makes sure a word is longer than 3 characters
                         {
-                            realloc(*(cache + cache_index), (sizeof(strlen(str)) + 1) * sizeof(char));
-                            printf("Word \"%s\" ==> %x (realloc)\n", str, cache_index);
-                        }
-                        else
-                        {
-                            *(cache + cache_index) = calloc(strlen(str) + 1, sizeof(char));
-                            printf("Word \"%s\" ==> %x (calloc)\n", str, cache_index);
+                            if(*(allocated+cache_index) == '1')
+                            {
+                                *(cache + cache_index) = realloc(*(cache + cache_index), (sizeof(strlen(str)) + 1) * sizeof(char));
+                                fprintf(stdout, "Word \"%s\" ==> %d (realloc)\n", str, cache_index);
+                            }
+                            else
+                            {
+                                *(cache + cache_index) = calloc(strlen(str) + 1, sizeof(char));
+                                fprintf(stdout, "Word \"%s\" ==> %d (calloc)\n", str, cache_index);
+                            }
+
+                            strcpy(*(cache + cache_index), str); // Saves the string in the cache
+                            *(allocated+cache_index) = '1'; // Saves that the memory section was allocated
                         }
 
-                        strcpy(*(cache + cache_index), str); // Saves the string in the cache
-                        *(allocated+cache_index) = '1'; // Saves that the memory section was allocated
                         free(str); // Frees the temporary string variable
                         str = calloc(128, sizeof(char)); // Resets the string value
                         index = 0;
                     }
                 }
             }
+
+            print_cache(cache, cache_size); // Prints out the contents of the cache
         }
 
         fclose(fp);
